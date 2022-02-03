@@ -1,0 +1,1122 @@
+{
+    "settings": {
+      "index.mapping.total_fields.limit": 10000,
+      "index.mapping.ignore_malformed": true,
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "analysis": {
+        "filter": {
+          "shingle": {
+            "type": "shingle"
+          }
+        },
+        "char_filter": {
+          "pre_negs": {
+            "type": "pattern_replace",
+            "pattern": "(\\w+)\\s+((?i:never|no|nothing|nowhere|noone|none|not|havent|hasnt|hadnt|cant|couldnt|shouldnt|wont|wouldnt|dont|doesnt|didnt|isnt|arent|aint))\\b",
+            "replacement": "~$1 $2"
+          },
+          "post_negs": {
+            "type": "pattern_replace",
+            "pattern": "\\b((?i:never|no|nothing|nowhere|noone|none|not|havent|hasnt|hadnt|cant|couldnt|shouldnt|wont|wouldnt|dont|doesnt|didnt|isnt|arent|aint))\\s+(\\w+)",
+            "replacement": "$1 ~$2"
+          },
+          "remove_hyphens": {
+            "type": "mapping",
+            "mappings": [
+              "-=>"
+            ]
+          },
+          "remove_quotes": {
+            "type": "mapping",
+            "mappings": [
+              "'=>"
+            ]
+          }
+        },
+        "analyzer": {
+          "reuters": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": [
+              "lowercase",
+              "stop",
+              "kstem"
+            ]
+          },
+          "reuters_depunctuated": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "char_filter": [
+              "remove_hyphens",
+              "remove_quotes"
+            ],
+            "filter": [
+              "lowercase",
+              "stop",
+              "kstem"
+            ]
+          },
+          "pattern_trimmed": {
+            "type": "pattern",
+            "pattern": "\\W+|\\b0+"
+          }
+        }
+      },
+      "similarity": {
+        "bm25-inverse-zero": {
+          "type": "BM25",
+          "b": 0
+        }
+      }
+    },
+    "mappings": {
+      "dynamic_templates": [
+        {
+          "pricesJsonAssertStringsAsFloats": {
+            "match_mapping_type": "string",
+            "path_match": "pricesJson.*",
+            "path_unmatch": "pricesJson.hasSalePrice*",
+            "mapping": {
+              "type": "float"
+            }
+          }
+        },
+        {
+          "pricesJsonAssertIntegersAsFloats": {
+            "match_mapping_type": "long",
+            "path_match": "pricesJson.*",
+            "path_unmatch": "pricesJson.hasSalePrice*",
+            "mapping": {
+              "type": "float"
+            }
+          }
+        },
+        {
+          "pricesJsonHasSalePriceAssertIntegersAsBoolean": {
+            "match_mapping_type": "long",
+            "path_match": "pricesJson.hasSalePrice*",
+            "mapping": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "childPricesJsonAssertStringsAsFloats": {
+            "match_mapping_type": "string",
+            "path_match": "childPricesJson.*",
+            "path_unmatch": "childPricesJson.hasSalePrice*",
+            "mapping": {
+              "type": "float"
+            }
+          }
+        },
+        {
+          "childPricesJsonAssertIntegersAsFloats": {
+            "match_mapping_type": "long",
+            "path_match": "childPricesJson.*",
+            "path_unmatch": "childPricesJson.hasSalePrice*",
+            "mapping": {
+              "type": "float"
+            }
+          }
+        },
+        {
+          "pricesJsonHasSalePriceAssertIntegersAsBoolean": {
+            "match_mapping_type": "long",
+            "path_match": "childPricesJson.hasSalePrice*",
+            "mapping": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "sortingJsonAssertStringsAsInts": {
+            "match_mapping_type": "string",
+            "path_match": "sortingJson.*",
+            "mapping": {
+              "type": "long"
+            }
+          }
+        },
+        {
+          "childSortingJsonAssertStringsAsInts": {
+            "match_mapping_type": "string",
+            "path_match": "childSortingJson.*",
+            "mapping": {
+              "type": "long"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "splitId": {
+          "type": "long"
+        },
+        "parentProductId": {
+          "type": "long"
+        },
+        "parentProductTitles": {
+          "type": "text",
+          "analyzer": "reuters",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated"
+            }
+          }
+        },
+        "brandedTitleSoundex": {
+          "type": "text"
+        },
+        "titleSoundex": {
+          "type": "text"
+        },
+        "parentProductShortTitle": {
+          "type": "text",
+          "analyzer": "reuters",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated"
+            }
+          }
+        },
+        "referenceSort": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            },
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "categoryName": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentProductSummary": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentProductSubtitle": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            },
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentProductDescription": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentProductAdditional": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentCustomDescription1": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentCustomDescription2": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentCustomDescription3": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentCustomDescription4": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "childTitles": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "modelList": {
+          "type": "text",
+          "analyzer": "pattern",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "asinList": {
+          "type": "text",
+          "analyzer": "pattern",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "pickLocationList": {
+          "type": "text",
+          "analyzer": "pattern",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "mpnList": {
+          "type": "text",
+          "analyzer": "pattern",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "referenceList": {
+          "type": "text",
+          "analyzer": "pattern",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "trimmed": {
+              "type": "text",
+              "analyzer": "pattern_trimmed"
+            },
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "categoryKeywords": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentCategoryName": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "parentCategoryKeywords": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "attributeList": {
+          "type": "keyword"
+        },
+        "brandKeywords": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "keywords": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "multisiteSaleStatus": {
+          "type": "text"
+        },
+        "manufacturerName": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "titleSort": {
+          "type": "keyword"
+        },
+        "brandedTitleSort": {
+          "type": "keyword"
+        },
+        "childTitleSort": {
+          "type": "keyword"
+        },
+        "childBrandedTitleSort": {
+          "type": "keyword"
+        },
+        "importReference": {
+          "type": "text"
+        },
+        "tradeCustomerGroupList": {
+          "type": "keyword"
+        },
+        "tagNames": {
+          "type": "text",
+          "analyzer": "reuters",
+          "similarity": "bm25-inverse-zero",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated",
+              "similarity": "bm25-inverse-zero"
+            }
+          }
+        },
+        "tagKeywords": {
+          "type": "text"
+        },
+        "saleFlag": {
+          "type": "boolean"
+        },
+        "featuredFlag": {
+          "type": "boolean"
+        },
+        "hidePriceFlag": {
+          "type": "boolean"
+        },
+        "authorisationFlag": {
+          "type": "boolean"
+        },
+        "zeroPricedFlag": {
+          "type": "boolean"
+        },
+        "orphanedFlag": {
+          "type": "boolean"
+        },
+        "hasStockFlag": {
+          "type": "boolean"
+        },
+        "activeFlag": {
+          "type": "boolean"
+        },
+        "deletedFlag": {
+          "type": "boolean"
+        },
+        "bundleOnlyFlag": {
+          "type": "boolean"
+        },
+        "tradeOnlyFlag": {
+          "type": "boolean"
+        },
+        "newProductsFlag": {
+          "type": "boolean"
+        },
+        "bestSellersFlag": {
+          "type": "boolean"
+        },
+        "parentBundleFlag": {
+          "type": "boolean"
+        },
+        "staticBundleFlag": {
+          "type": "boolean"
+        },
+        "featuredSort": {
+          "type": "keyword"
+        },
+        "hasWeightsFlag": {
+          "type": "boolean"
+        },
+        "hasPricesFlag": {
+          "type": "boolean"
+        },
+        "hasSalePricesFlag": {
+          "type": "boolean"
+        },
+        "hasCostPricesFlag": {
+          "type": "boolean"
+        },
+        "hasRrpPricesFlag": {
+          "type": "boolean"
+        },
+        "viewedAvailabilityId": {
+          "type": "integer"
+        },
+        "hasImagesFlag": {
+          "type": "boolean"
+        },
+        "upcomingFlag": {
+          "type": "boolean"
+        },
+        "allUpcomingFlag": {
+          "type": "boolean"
+        },
+        "eanFlag": {
+          "type": "boolean"
+        },
+        "excludeFromPriceUpdateFlag": {
+          "type": "boolean"
+        },
+        "stockAvailableFlag": {
+          "type": "boolean"
+        },
+        "shortDescriptionFlag": {
+          "type": "boolean"
+        },
+        "shortSummaryFlag": {
+          "type": "boolean"
+        },
+        "buyListFlag": {
+          "type": "boolean"
+        },
+        "preOrderFlag": {
+          "type": "boolean"
+        },
+        "showOnMobileSiteFlag": {
+          "type": "boolean"
+        },
+        "hasRedirectUrl": {
+          "type": "boolean"
+        },
+        "hideProductCategoryFlag": {
+          "type": "boolean"
+        },
+        "releaseDateFlag": {
+          "type": "boolean"
+        },
+        "hasWeightExportFlag": {
+          "type": "boolean"
+        },
+        "hasModelFlag": {
+          "type": "boolean"
+        },
+        "hasChildStock": {
+          "type": "boolean"
+        },
+        "hasProductCourierFlag": {
+          "type": "boolean"
+        },
+        "manufacturerId": {
+          "type": "keyword"
+        },
+        "priceBandId": {
+          "type": "integer"
+        },
+        "rating": {
+          "type": "half_float"
+        },
+        "numRatings": {
+          "type": "integer"
+        },
+        "priceLowInc": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "priceHighInc": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "priceLowEx": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "priceHighEx": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "categories": {
+          "type": "keyword"
+        },
+        "categoryId": {
+          "type": "integer"
+        },
+        "parentId": {
+          "type": "integer"
+        },
+        "manufacturerSortOrder": {
+          "type": "integer"
+        },
+        "manufacturerSort": {
+          "type": "integer"
+        },
+        "saleSort": {
+          "type": "integer"
+        },
+        "productSortOrder": {
+          "type": "integer"
+        },
+        "totalSold": {
+          "type": "integer"
+        },
+        "totalSoldOverall": {
+          "type": "integer"
+        },
+        "totalAttributeSold": {
+          "type": "integer"
+        },
+        "totalAttributeSoldOverall": {
+          "type": "integer"
+        },
+        "stockDelaySort": {
+          "type": "integer"
+        },
+        "featuredSortOrder": {
+          "type": "keyword"
+        },
+        "productStockTotal": {
+          "type": "integer"
+        },
+        "staticBundleTypeId": {
+          "type": "integer"
+        },
+        "brandSortOrder": {
+          "type": "keyword"
+        },
+        "productTypeId": {
+          "type": "integer"
+        },
+        "totalSoldSeven": {
+          "type": "integer"
+        },
+        "multisite1PriceExLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite1PriceIncLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite2PriceExLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite2PriceIncLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite3PriceExLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite3PriceIncLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite4PriceExLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite4PriceIncLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite5PriceExLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite5PriceIncLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite6PriceExLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite6PriceIncLow": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite1PriceExHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite1PriceIncHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite2PriceExHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite2PriceIncHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite3PriceExHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite3PriceIncHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite4PriceExHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite4PriceIncHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite5PriceExHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite5PriceIncHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite6PriceExHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "multisite6PriceIncHigh": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "percentSavingInc": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "percentSavingEx": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "shippingCutoffTime": {
+          "type": "integer"
+        },
+        "parentStockTotal": {
+          "type": "float"
+        },
+        "m2PriceLowInc": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "m2PriceHighInc": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "m2PriceLowEx": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "m2PriceHighEx": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "categorySortOrder": {
+          "type": "integer"
+        },
+        "weightLow": {
+          "type": "float"
+        },
+        "buyPrice": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "weightHigh": {
+          "type": "float"
+        },
+        "weightAverage": {
+          "type": "float"
+        },
+        "weightManual": {
+          "type": "float"
+        },
+        "intVal": {
+          "type": "integer"
+        },
+        "dateAdded": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
+        "productDateArchived": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
+        "importDateAdded": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
+        "dateLastModified": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
+        "releaseDate": {
+          "type": "date",
+          "format": "epoch_millis"
+        },
+        "importReferenceList": {
+          "type": "text"
+        },
+        "inactiveReferenceCodes": {
+          "type": "text",
+          "analyzer": "reuters",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated"
+            }
+          }
+        },
+        "productOptionNum": {
+          "type": "integer"
+        },
+        "hasMm2Prices": {
+          "type": "boolean"
+        },
+        "priceIncMm2Low": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "priceIncMm2High": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "priceExMm2Low": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "priceExMm2High": {
+          "type": "scaled_float",
+          "scaling_factor": 1000
+        },
+        "numSold1Days": {
+          "type": "integer"
+        },
+        "numSoldLast7Days": {
+          "type": "integer"
+        },
+        "numSoldLast30Days": {
+          "type": "integer"
+        },
+        "numSoldLast60Days": {
+          "type": "integer"
+        },
+        "numSoldLast90Days": {
+          "type": "integer"
+        },
+        "numSoldOverall": {
+          "type": "integer"
+        },
+        "numSoldTotal1Days": {
+          "type": "integer"
+        },
+        "numSoldTotalLast7Days": {
+          "type": "integer"
+        },
+        "numSoldTotalLast30Days": {
+          "type": "integer"
+        },
+        "numSoldTotalLast60Days": {
+          "type": "integer"
+        },
+        "numSoldTotalLast90Days": {
+          "type": "integer"
+        },
+        "numSoldTotalOverall": {
+          "type": "integer"
+        },
+        "pricesJson": {
+          "type": "object"
+        },
+        "sortingJson": {
+          "type": "object"
+        },
+        "reviewsJson": {
+          "type": "object"
+        },
+        "stockMessagesJson": {
+          "type": "object"
+        },
+        "scoringJson": {
+          "type": "flattened"
+        },
+        "titlesJson": {
+          "type": "flattened"
+        },
+        "activeJson": {
+          "type": "flattened"
+        },
+        "productDataJson": {
+          "type": "flattened"
+        },
+        "cataloguePage": {
+          "type": "integer"
+        },
+        "cataloguePageInt": {
+          "type": "integer"
+        },
+        "relatedSearchTerms": {
+          "type": "text",
+          "analyzer": "reuters",
+          "fields": {
+            "depunctuated": {
+              "type": "text",
+              "analyzer": "reuters_depunctuated"
+            }
+          }
+        },
+        "turnover": {
+          "type": "half_float"
+        },
+        "hiddenFlag": {
+          "type": "boolean"
+        },
+        "priceBandIds": {
+          "type": "integer"
+        },
+        "priceBandIdsEx": {
+          "type": "integer"
+        },
+        "manufacturerIds": {
+          "type": "integer"
+        },
+        "categoriesId": {
+          "type": "integer"
+        },
+        "subscriptionIds": {
+          "type": "integer"
+        },
+        "categoryGroupId": {
+          "type": "integer"
+        },
+        "categoryParentId": {
+          "type": "integer"
+        },
+        "tagsId": {
+          "type": "integer"
+        },
+        "tagsIdMappedFromAttributes": {
+          "type": "integer"
+        },
+        "tagGroupsId": {
+          "type": "integer"
+        },
+        "tagsIdVisible": {
+          "type": "integer"
+        },
+        "tagGroupsIdMappedFromAttributes": {
+          "type": "integer"
+        },
+        "orderedQuantities": {
+          "type": "integer"
+        },
+        "attributeValueIds": {
+          "type": "integer"
+        },
+        "attributeValueIdsInStock": {
+          "type": "integer"
+        },
+        "attributeValueIdsInStockMappedFromTags": {
+          "type": "integer"
+        },
+        "attributeIds": {
+          "type": "integer"
+        },
+        "bundleOptionIds": {
+          "type": "integer"
+        },
+        "bundleOptionStepIds": {
+          "type": "integer"
+        },
+        "tradediscountsCustomerGroupId": {
+          "type": "integer"
+        },
+        "tradediscountsTradeDiscountId": {
+          "type": "integer"
+        },
+        "componentProductId": {
+          "type": "integer"
+        },
+        "websiteId": {
+          "type": "integer"
+        },
+        "languageId": {
+          "type": "integer"
+        },
+        "priceDimensionGroupId": {
+          "type": "integer"
+        },
+        "categoryStructureId": {
+          "type": "integer"
+        },
+        "offerIds": {
+          "type": "integer"
+        },
+        "stockMessageId": {
+          "type": "integer"
+        },
+        "sashId": {
+          "type": "integer"
+        },
+        "secondarySashId": {
+          "type": "integer"
+        },
+        "productSupplierIds": {
+          "type": "integer"
+        },
+        "multichannelStatus": {
+          "type": "integer"
+        },
+        "multisitePriceBandId": {
+          "type": "integer"
+        },
+        "multisiteFeaturedFlag": {
+          "type": "integer"
+        },
+        "multisiteSaleFlag": {
+          "type": "integer"
+        },
+        "stockInLocations": {
+          "type": "integer"
+        },
+        "stockNotInLocations": {
+          "type": "integer"
+        },
+        "amazonStoreId": {
+          "type": "integer"
+        },
+        "ebayStoreStatus": {
+          "type": "integer"
+        },
+        "productAuthorisationStageId": {
+          "type": "integer"
+        },
+        "personalisationTemplateId": {
+          "type": "integer"
+        },
+        "productBasedDeliveryCourier": {
+          "type": "integer"
+        },
+        "hasProductBasedDelivery": {
+          "type": "boolean"
+        },
+        "multisiteTradeOnlyFlag": {
+          "type": "integer"
+        }
+      }
+    }
+  }
