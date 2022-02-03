@@ -1,50 +1,48 @@
 <?xml version='1.1' encoding='UTF-8'?>
 <project>
-    <actions/>
-    <description>Creates a Elasticsearch Index.</description>
-    <keepDependencies>false</keepDependencies>
-    <properties>
+  <actions/>
+  <description>Creates a Elasticsearch Index.</description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
     <hudson.model.ParametersDefinitionProperty>
-        <parameterDefinitions>
+      <parameterDefinitions>
         <hudson.model.StringParameterDefinition>
-            <name>index_name</name>
-            <description>The name of the index, for example: chris-test</description>
-            <trim>true</trim>
+          <name>index_name</name>
+          <description>The name of the index, for example: chris-test</description>
+          <trim>true</trim>
         </hudson.model.StringParameterDefinition>
         <hudson.model.ChoiceParameterDefinition>
-            <name>environment</name>
-            <choices class="java.util.Arrays$ArrayList">
+          <name>environment</name>
+          <choices class="java.util.Arrays$ArrayList">
             <a class="string-array">
-                <string>Development</string>
-                <string>Production</string>
+              <string>Development</string>
+              <string>Production</string>
             </a>
-            </choices>
+          </choices>
         </hudson.model.ChoiceParameterDefinition>
-        </parameterDefinitions>
+      </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
-    </properties>
-    <scm class="hudson.scm.NullSCM"/>
-    <canRoam>true</canRoam>
-    <disabled>false</disabled>
-    <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
-    <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
-    <triggers/>
-    <concurrentBuild>false</concurrentBuild>
-    <builders>
+  </properties>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
     <hudson.tasks.Shell>
-        <command>#!/bin/bash
+      <command>#!/bin/bash
 echo &quot;Creating index: ${index_name}...&quot;;
 
 if [[ &quot;$environment&quot; == &quot;Production&quot; ]]; then
-
-    echo &quot;Prod&quot;;
-
+    curl -H &quot;Content-Type: application/json&quot; -XPUT &quot;http://elasticsearch-vip.visualsoft.io:9200/${index_name}&quot; -d @body.json
 else
-        curl -H &quot;Content-Type: application/json&quot; -XPUT &quot;http://elasticsearch:9200/${index_name}&quot; -d @body.json
+    curl -H &quot;Content-Type: application/json&quot; -XPUT &quot;http://elasticsearch:9200/${index_name}&quot; -d @body.json
 fi;</command>
-        <configuredLocalRules/>
+      <configuredLocalRules/>
     </hudson.tasks.Shell>
-    </builders>
-    <publishers/>
-    <buildWrappers/>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
 </project>

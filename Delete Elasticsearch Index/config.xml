@@ -36,11 +36,9 @@
 echo &quot;Deleting index: ${index_name}...&quot;;
 
 if [[ &quot;$environment&quot; == &quot;Production&quot; ]]; then
-
-    echo &quot;Prod&quot;;
-
+    curl -H &quot;Content-Type: application/json&quot; -XDELETE &quot;http://elasticsearch-vip.visualsoft.io:9200/${index_name}&quot;
 else
-        curl -H &quot;Content-Type: application/json&quot; -XDELETE &quot;http://elasticsearch:9200/${index_name}&quot;
+    curl -H &quot;Content-Type: application/json&quot; -XDELETE &quot;http://elasticsearch:9200/${index_name}&quot;
 fi;</command>
       <configuredLocalRules/>
     </hudson.tasks.Shell>
